@@ -12,7 +12,7 @@ using _402410745_Staybnb_assignment.Data;
 namespace _402410745_Staybnb_assignment.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261023211627_InitialCreate")]
+    [Migration("20261023213338_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
