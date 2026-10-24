@@ -1,0 +1,26 @@
+@model List<HostApplication>
+@{
+    ViewData["Title"] = "Application status";
+}
+<h1>Application status</h1>
+@if (Model.Count == 0)
+{
+    <p>Seems You have not applied yet. <a asp-action="Create">Click Here to Apply now</a>.</p>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <tr><th>Property</th><th>City</th><th>Applied</th><th>Status</th></tr>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td>@a.Property.Title</td>
+                    <td>@a.Property.City</td>
+                    <td>@a.AppliedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td><span class="status @a.Status.ToString().ToLower()">@a.Status</span></td>
+                </tr>
+            }
+        </table>
+    </div>
+}

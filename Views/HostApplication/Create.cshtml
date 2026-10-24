@@ -1,0 +1,66 @@
+@model HostApplyViewModel
+@{
+    ViewData["Title"] = "Become a Host on Staybnb";
+}
+<h1>Become a Host</h1>
+<p class="muted">Describe your property. An Admin will review/approve it. NB!: At least one image is required.</p>
+
+<div asp-validation-summary="All" class="error"></div>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="box">
+    <label asp-for="Title">Title</label>
+    <input asp-for="Title" />
+
+    <label asp-for="Description">Description</label>
+    <textarea asp-for="Description" rows="4"></textarea>
+
+    <div class="row">
+        <div>
+            <label asp-for="City">City</label>
+            <input asp-for="City" />
+        </div>
+        <div>
+            <label asp-for="PropertyType">Property type</label>
+            <select asp-for="PropertyType">
+                @foreach (var t in PropertyTypes.All)
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <label asp-for="Address">Address</label>
+    <input asp-for="Address" />
+
+    <div class="row">
+        <div>
+            <label asp-for="PricePerNight">Price per night (ZAR)</label>
+            <input asp-for="PricePerNight" type="number" step="0.01" />
+        </div>
+        <div>
+            <label asp-for="CleaningFee">Cleaning fee (ZAR)</label>
+            <input asp-for="CleaningFee" type="number" step="0.01" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div><label asp-for="MaxGuests">Max guests</label><input asp-for="MaxGuests" type="number" /></div>
+        <div><label asp-for="Bedrooms">Bedrooms</label><input asp-for="Bedrooms" type="number" /></div>
+        <div><label asp-for="Beds">Beds</label><input asp-for="Beds" type="number" /></div>
+        <div><label asp-for="Bathrooms">Bathrooms</label><input asp-for="Bathrooms" type="number" /></div>
+    </div>
+
+    <label>Amenities</label>
+    @foreach (var a in Model.AllAmenities)
+    {
+        <label style="font-weight:normal; display:inline-block; margin-right:14px;">
+            <input type="checkbox" name="AmenityIds" value="@a.Id" /> @a.Name
+        </label>
+    }
+
+    <label>Property images (jpg, png, webp - you can choose several images to upload)</label>
+    <input type="file" name="images" multiple required accept=".jpg,.jpeg,.png,.webp" />
+
+    <p><button type="submit">Submit application</button></p>
+</form>
