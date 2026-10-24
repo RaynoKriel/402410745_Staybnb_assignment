@@ -1,0 +1,22 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Register";
+}
+<div class="box narrow">
+    <h1>Create your account</h1>
+    <p class="muted">New accounts start as Guests. You can apply to become a Host later.</p>
+    <div asp-validation-summary="All" class="error"></div>
+    <form asp-action="Register" method="post">
+        <label asp-for="FirstName">First name</label>
+        <input asp-for="FirstName" />
+        <label asp-for="LastName">Last name</label>
+        <input asp-for="LastName" />
+        <label asp-for="Email">Email</label>
+        <input asp-for="Email" />
+        <label asp-for="Password">Password (min 6 characters)</label>
+        <input asp-for="Password" />
+        <label asp-for="ConfirmPassword">Confirm password</label>
+        <input asp-for="ConfirmPassword" />
+        <p><button type="submit">Register</button></p>
+    </form>
+</div>
