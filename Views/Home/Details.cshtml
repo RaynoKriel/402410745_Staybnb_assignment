@@ -1,0 +1,137 @@
+@model HostProperty
+@{
+    ViewData["Title"] = Model.Title;
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+    bool canBook = User.IsInRole("Guest");
+    string myId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    double average = Model.Reviews.Count > 0 ? Model.Reviews.Average(r => r.Rating) : 0;
+    bool canReview = (bool)ViewBag.CanReview;
+}
+<h1>@Model.Title</h1>
+<p class="muted">
+    @Model.City - @Model.Address<br />
+    @Model.MaxGuests guests - @Model.Bedrooms bedrooms - @Model.Beds beds - @Model.Bathrooms baths<br />
+    Rating: @average.ToString("0.0") (@Model.Reviews.Count reviews) - Hosted by @Model.Host.FullName
+</p>
+
+<div class="gallery">
+    @foreach (var image in Model.Images)
+    {
+        <img src="@image.ImageUrl" alt="@Model.Title" />
+    }
+</div>
+
+<div class="details">
+    <div class="left">
+        <h2>About this place</h2>
+        <p>@Model.Description</p>
+
+        <h2>Amenities</h2>
+        @if (Model.Amenities.Count == 0)
+        {
+            <p class="muted">No amenities listed.</p>
+        }
+        <ul>
+            @foreach (var a in Model.Amenities)
+            {
+                <li>@a.Name</li>
+            }
+        </ul>
+
+        <h2>Reviews</h2>
+        @if (Model.Reviews.Count == 0)
+        {
+            <p class="muted">No reviews yet.</p>
+        }
+        @foreach (var r in Model.Reviews.OrderByDescending(x => x.CreatedAt))
+        {
+            <div class="box">
+                <b>@r.Reviewer.FullName</b> - @r.Rating / 5<br />
+                @r.Comment
+            </div>
+        }
+
+        @if (canReview)
+        {
+            <h2>Leave a review</h2>
+            <form asp-controller="Booking" asp-action="AddReview" method="post" class="box">
+                <input type="hidden" name="propertyId" value="@Model.Id" />
+                <label>Rating (1-5)</label>
+                <select name="rating">
+                    <option>5</option>
+                    <option>4</option>
+                    <option>3</option>
+                    <option>2</option>
+                    <option>1</option>
+                </select>
+                <label>Comment</label>
+                <textarea name="comment" rows="3" maxlength="1000"></textarea>
+                <p><button type="submit">Submit review</button></p>
+            </form>
+        }
+    </div>
+
+    <div class="right">
+        <div class="box">
+            <h2>R @Model.PricePerNight.ToString("N2") <span class="muted">/ night</span></h2>
+
+            @if (canBook)
+            {
+                <form asp-controller="Booking" asp-action="Create" method="post">
+                    <input type="hidden" name="propertyId" value="@Model.Id" />
+                    <label>Check-in</label>
+                    <input type="date" id="checkIn" name="checkIn" required />
+                    <label>Check-out</label>
+                    <input type="date" id="checkOut" name="checkOut" required />
+                    <label>Guests (max @Model.MaxGuests)</label>
+                    <input type="number" name="guests" value="1" min="1" max="@Model.MaxGuests" required />
+                    <p id="summary" class="muted">Choose your dates to see the price.</p>
+                    <button type="submit">Request to book</button>
+                </form>
+            }
+            else if (!User.Identity.IsAuthenticated)
+            {
+                <p>
+                    <a asp-controller="Account" asp-action="Login">Log in</a> or
+                    <a asp-controller="Account" asp-action="Register">register</a> as a Guest to book.
+                </p>
+            }
+            else
+            {
+                <p class="muted">Only Guests can book.</p>
+            }
+
+            @if (User.Identity.IsAuthenticated && Model.HostId != myId)
+            {
+                <p><a asp-controller="Messages" asp-action="Index" asp-route-with="@Model.HostId">Message the host</a></p>
+            }
+        </div>
+    </div>
+</div>
+
+@if (canBook)
+{
+    <script>
+        // Same formula as the server: TotalPrice = (PricePerNight x Nights) + CleaningFee + ServiceFee
+        var price = @Model.PricePerNight.ToString("0.00", inv);
+        var cleaning = @Model.CleaningFee.ToString("0.00", inv);
+        var rate = @BookingRules.ServiceFeeRate.ToString("0.00", inv);
+
+        function updateSummary() {
+            var a = new Date(document.getElementById("checkIn").value);
+            var b = new Date(document.getElementById("checkOut").value);
+            var nights = Math.round((b - a) / 86400000);
+            var box = document.getElementById("summary");
+            if (!(nights > 0)) { box.innerHTML = "Choose valid dates to see the price."; return; }
+            var room = price * nights;
+            var service = Math.round(room * rate * 100) / 100;
+            var total = room + cleaning + service;
+            box.innerHTML = "R " + price.toFixed(2) + " x " + nights + " nights = R " + room.toFixed(2) +
+                "<br>Cleaning fee: R " + cleaning.toFixed(2) +
+                "<br>Service fee: R " + service.toFixed(2) +
+                "<br><b>Total: R " + total.toFixed(2) + "</b>";
+        }
+        document.getElementById("checkIn").addEventListener("change", updateSummary);
+        document.getElementById("checkOut").addEventListener("change", updateSummary);
+    </script>
+}
