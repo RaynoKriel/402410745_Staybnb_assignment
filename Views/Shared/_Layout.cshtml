@@ -1,50 +1,92 @@
-﻿<!DOCTYPE html>
+@inject _402410745_Staybnb_assignment.Data.ApplicationDbContext Db
+@inject Microsoft.AspNetCore.Identity.UserManager<_402410745_Staybnb_assignment.Models.ApplicationUser> Users
+@{
+    // Counts for the bell icon and the messages link
+    int unreadNotifications = 0;
+    int unreadMessages = 0;
+    if (User.Identity.IsAuthenticated)
+    {
+        var me = Users.GetUserId(User);
+        unreadNotifications = Db.Notifications.Count(n => n.UserId == me && !n.IsRead);
+        unreadMessages = Db.Messages.Count(m => m.ReceiverId == me && !m.IsRead);
+    }
+    bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - _402410745_Staybnb_assignment</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/_402410745_Staybnb_assignment.styles.css" asp-append-version="true" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - 402410745_Staybnb</title>
+    <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">_402410745_Staybnb_assignment</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+<header>
+        <a class="logo" asp-controller="Home" asp-action="Index">402410745_Staybnb</a>
+    <nav>
+        @if (!User.Identity.IsAuthenticated)
+        {
+            <a asp-controller="Home" asp-action="Index">Browse</a>
+            <a asp-controller="Account" asp-action="Login">Login</a>
+            <a asp-controller="Account" asp-action="Register">Register</a>
+        }
+        else
+        {
+            if (User.IsInRole("Guest"))
+            {
+                <a asp-controller="Home" asp-action="Index">Browse</a>
+                <a asp-controller="Booking" asp-action="MyBookings">My Bookings</a>
+                <a asp-controller="HostApplication" asp-action="Create">Become a Host</a>
+                <a asp-controller="HostApplication" asp-action="Index">Application Status</a>
+            }
+            if (User.IsInRole("Host"))
+            {
+                <a asp-controller="Host" asp-action="Dashboard">Dashboard</a>
+                <a asp-controller="Host" asp-action="MyProperties">My Properties</a>
+                <a asp-controller="Host" asp-action="BookingRequests">Booking Requests</a>
+                <a asp-controller="Host" asp-action="CheckIns">Check-Ins</a>
+                <a asp-controller="HostApplication" asp-action="Create">Add Property</a>
+                <a asp-controller="HostApplication" asp-action="Index">Applications</a>
+            }
+            if (isAdmin)
+            {
+                <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                <a asp-controller="Admin" asp-action="Applications">Applications</a>
+                <a asp-controller="Admin" asp-action="ActivityLogs">Activity Logs</a>
+            }
+            if (User.IsInRole("SuperAdmin"))
+            {
+                <a asp-controller="Admin" asp-action="Users">Users</a>
+            }
+            <a asp-controller="Messages" asp-action="Index">Messages</a>
+            if (unreadMessages > 0)
+            {
+                <span class="badge">@unreadMessages</span>
+            }
+            <a asp-controller="Notifications" asp-action="Index">Notifications</a>
+            if (unreadNotifications > 0)
+            {
+                <span class="badge">@unreadNotifications</span>
+            }
+            <form asp-controller="Account" asp-action="Logout" method="post" class="inline">
+                <button type="submit" class="link">Logout (@User.Identity.Name)</button>
+            </form>
+        }
+    </nav>
+</header>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - _402410745_Staybnb_assignment - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+<main>
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert ok">@TempData["Message"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert error">@TempData["Error"]</div>
+    }
+    @RenderBody()
+</main>
+
+    <footer>402410745_Staybnb - Student Rayno Kriel Assignemnt</footer>
 </body>
 </html>
