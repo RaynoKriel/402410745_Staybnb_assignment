@@ -1,0 +1,35 @@
+@model List<ApplicationUser>
+@{
+    ViewData["Title"] = "Users Screen";
+}
+<h1>Guests - that can be promoted to Admin</h1>
+<form method="get" asp-action="Users" class="filters">
+    <input type="text" name="search" placeholder="Search name or email" value="@ViewBag.Search" />
+    <button type="submit">Search</button>
+</form>
+@if (Model.Count == 0)
+{
+    <p>No guests found.</p>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <tr><th>Name</th><th>Email</th><th>Joined</th><th></th></tr>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td>@u.FullName</td>
+                    <td>@u.Email</td>
+                    <td>@u.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <form asp-action="Promote" method="post" class="inline">
+                            <input type="hidden" name="userId" value="@u.Id" />
+                            <button type="submit">Promote to Admin</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+}

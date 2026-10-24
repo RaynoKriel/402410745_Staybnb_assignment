@@ -1,0 +1,39 @@
+@model List<HostApplication>
+@{
+    ViewData["Title"] = "Current Host applications";
+}
+<h1>Host Applications</h1>
+@if (Model.Count == 0)
+{
+    <p>No applications yet.</p>
+}
+@foreach (var a in Model)
+{
+    <div class="box">
+        <b>@a.Property.Title</b> <span class="status @a.Status.ToString().ToLower()">@a.Status</span><br />
+        <span class="muted">
+            Applicant: @a.ApplicationUser.FullName (@a.ApplicationUser.Email) - Applied @a.AppliedAt.ToString("yyyy-MM-dd HH:mm")
+        </span>
+        <p>
+            @a.Property.PropertyType in @a.Property.City, @a.Property.Address<br />
+            R @a.Property.PricePerNight.ToString("N2") per night - cleaning R @a.Property.CleaningFee.ToString("N2") -
+            @a.Property.MaxGuests guests<br />
+            @a.Property.Description
+        </p>
+        <div class="gallery">
+            @foreach (var image in a.Property.Images)
+            {
+                <img src="@image.ImageUrl" alt="@a.Property.Title" style="height:110px" />
+            }
+        </div>
+        @* simple approve or dont *@
+        @if (a.Status == ApplicationStatus.Pending)
+        {
+            <form asp-action="DecideApplication" method="post">
+                <input type="hidden" name="id" value="@a.Id" />
+                <button type="submit" name="approve" value="true">Approve</button>
+                <button type="submit" name="approve" value="false" class="grey">Reject</button>
+            </form>
+        }
+    </div>
+}

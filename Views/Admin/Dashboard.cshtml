@@ -1,0 +1,61 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin dashboard";
+}
+<h1>Dashboard Overview</h1>
+<div class="stats">
+    <div class="stat"><b>@Model.TotalUsers</b>Total users</div>
+    <div class="stat"><b>@Model.PendingApplications</b>Pending host applications</div>
+    <div class="stat"><b>@Model.ActiveProperties</b>Active properties</div>
+    <div class="stat"><b>R @Model.PlatformRevenue.ToString("N2")</b>Platform revenue (paid bookings)</div>
+    <div class="stat"><b>@Model.TotalBookings</b>Total bookings</div>
+    <div class="stat"><b>@Model.ApprovedHosts</b>Approved hosts</div>
+</div>
+
+<h2>Recent user activity</h2>
+<div class="table-wrap">
+    <table>
+        <tr><th>User</th><th>Action</th><th>Date</th></tr>
+        @foreach (var log in Model.RecentActivity)
+        {
+            <tr>
+                <td>@log.User.FullName</td>
+                <td>@log.Action</td>
+                <td>@log.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        }
+    </table>
+</div>
+<p><a asp-action="ActivityLogs">See all activity logs</a></p>
+
+<h2>Recent host applications recieved and statuses</h2>
+<div class="table-wrap">
+    <table>
+        <tr><th>Applicant</th><th>Property</th><th>Date</th><th>Status</th></tr>
+        @foreach (var a in Model.RecentApplications)
+        {
+            <tr>
+                <td>@a.ApplicationUser.FullName</td>
+                <td>@a.Property.Title</td>
+                <td>@a.AppliedAt.ToString("yyyy-MM-dd")</td>
+                <td><span class="status @a.Status.ToString().ToLower()">@a.Status</span></td>
+            </tr>
+        }
+    </table>
+</div>
+
+<h2>Recent bookings made on the site</h2>
+<div class="table-wrap">
+    <table>
+        <tr><th>Guest</th><th>Property</th><th>Dates</th><th>Status</th></tr>
+        @foreach (var b in Model.RecentBookings)
+        {
+            <tr>
+                <td>@b.Guest.FullName</td>
+                <td>@b.Property.Title</td>
+                <td>@b.CheckInDate.ToString("yyyy-MM-dd") to @b.CheckOutDate.ToString("yyyy-MM-dd")</td>
+                <td><span class="status @b.Status.ToString().ToLower()">@b.Status</span></td>
+            </tr>
+        }
+    </table>
+</div>
