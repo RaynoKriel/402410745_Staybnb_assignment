@@ -68,6 +68,17 @@ public class HostApplyViewModel
     public List<Amenity> AllAmenities { get; set; } = new();
 }
 
+public class HostDashboardViewModel
+{
+    public int TotalProperties { get; set; }
+    public int ActiveProperties { get; set; }
+    public int TotalBookings { get; set; }
+    public int PendingBookings { get; set; }
+    public decimal TotalEarnings { get; set; }
+    public double AverageRating { get; set; }
+    public int ReviewCount { get; set; }
+}
+
 public class AdminDashboardViewModel
 {
     public int TotalUsers { get; set; }
@@ -80,3 +91,4 @@ public class AdminDashboardViewModel
     public List<HostApplication> RecentApplications { get; set; } = new();
     public List<Booking> RecentBookings { get; set; } = new();
 }
+

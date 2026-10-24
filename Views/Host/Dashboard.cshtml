@@ -1,0 +1,16 @@
+@model HostDashboardViewModel
+@{
+    ViewData["Title"] = "Host dashboard Screen";
+}
+<h1>Host Dashboard</h1>
+<div class="stats">
+    <div class="stat"><b>@Model.TotalProperties</b>Total properties (@Model.ActiveProperties active)</div>
+    <div class="stat"><b>@Model.TotalBookings</b>Total bookings (@Model.PendingBookings pending)</div>
+    <div class="stat"><b>R @Model.TotalEarnings.ToString("N2")</b>Total earnings</div>
+    <div class="stat"><b>@Model.AverageRating.ToString("0.0")</b>Average rating (@Model.ReviewCount reviews)</div>
+</div>
+<p>
+    <a class="button" asp-controller="HostApplication" asp-action="Create">Add new property</a>
+    <a class="button" asp-action="BookingRequests">Booking requests</a>
+    <a class="button" asp-action="CheckIns">Verify check-ins</a>
+</p>
