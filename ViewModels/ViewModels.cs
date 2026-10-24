@@ -32,4 +32,39 @@ public class LoginViewModel
     public bool RememberMe { get; set; }
 }
 
+public class HostApplyViewModel
+{
+    [Required, StringLength(100)]
+    public string Title { get; set; }
+
+    [Required]
+    public string Description { get; set; }
+
+    [Range(1, 1000000, ErrorMessage = "Enter a price per night.")]
+    public decimal PricePerNight { get; set; }
+
+    [Range(0, 1000000)]
+    public decimal CleaningFee { get; set; }
+
+    [Required, StringLength(250)]
+    public string Address { get; set; }
+
+    [Required, StringLength(100)]
+    public string City { get; set; }
+
+    [Required]
+    public string PropertyType { get; set; } = "Apartment";
+
+    [Range(1, 50)]
+    public int MaxGuests { get; set; } = 2;
+    [Range(0, 50)]
+    public int Bedrooms { get; set; } = 1;
+    [Range(0, 50)]
+    public int Beds { get; set; } = 1;
+    [Range(0, 50)]
+    public int Bathrooms { get; set; } = 1;
+
+    public List<int> AmenityIds { get; set; } = new();
+    public List<Amenity> AllAmenities { get; set; } = new();
+}
 
