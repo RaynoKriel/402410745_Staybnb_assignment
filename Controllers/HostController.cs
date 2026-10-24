@@ -72,7 +72,62 @@ public class HostController : Controller
         await _audit.LogAsync(userId, (property.IsActive ? "Activated " : "Deactivated ") + property.Title, ActivityType.Property);
         return RedirectToAction("MyProperties");
     }
-    
-    
+
+    // Request made for a booking
+
+    public async Task<IActionResult> BookingRequests()
+    {
+        var userId = _users.GetUserId(User);
+        var bookings = await _db.Bookings.Include(b => b.Property).Include(b => b.Guest).Where(b => b.Property.HostId == userId).OrderByDescending(b => b.CreatedAt).ToListAsync();
+        return View(bookings);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DecideBooking(int id, bool approve)
+    {
+        var userId = _users.GetUserId(User);
+        var booking = await _db.Bookings.Include(b => b.Property).ThenInclude(p => p.CheckInProcess).Include(b => b.Payment)
+            .FirstOrDefaultAsync(b => b.Id == id && b.Property.HostId == userId && b.Status == BookingStatus.Pending);
+        if (booking == null) return NotFound();
+
+        if (approve)
+        {
+            bool taken = await _db.Bookings.AnyAsync(b => b.Id != booking.Id && b.PropertyId == booking.PropertyId
+                && (b.Status == BookingStatus.Approved || b.Status == BookingStatus.CheckedIn)
+                && booking.CheckInDate < b.CheckOutDate && booking.CheckOutDate > b.CheckInDate);
+            if (taken)
+            {
+                TempData["Error"] = "Those dates overlap with another approved booking. Please choose other dates";
+                return RedirectToAction("BookingRequests");
+            }
+
+            booking.Status = BookingStatus.Approved;
+            booking.Payment.Status = PaymentStatus.Paid;
+
+            // Approval creates the guest's check-in record (Booking 1-to-1 GuestCheckIn).
+            var process = booking.Property.CheckInProcess;
+            if (process == null)
+            {
+                process = CheckInProcess.CreateDefault();
+                process.PropertyId = booking.PropertyId;
+            }
+            _db.GuestCheckIns.Add(new GuestCheckIn { Booking = booking, CheckInProcess = process });
+        }
+        else
+        {
+            booking.Status = BookingStatus.Rejected;
+            booking.Payment.Status = PaymentStatus.Failed;
+        }
+        await _db.SaveChangesAsync();
+
+        string word = approve ? "approved" : "rejected";
+        await _audit.LogAsync(userId, "Booking #" + booking.Id + " " + word, ActivityType.Booking);
+        await _audit.NotifyAsync(booking.GuestId, approve ? "Booking Approved" : "Booking Rejected",
+            "Your booking for '" + booking.Property.Title + "' was " + word + ".",
+            approve ? NotificationType.Success : NotificationType.Warning, "/Booking/MyBookings");
+
+        return RedirectToAction("BookingRequests");
+    }
+
 
 }

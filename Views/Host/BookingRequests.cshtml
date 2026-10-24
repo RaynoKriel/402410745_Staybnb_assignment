@@ -1,0 +1,38 @@
+@model List<Booking>
+@{
+    ViewData["Title"] = "Booking requests";
+}
+<h1>Booking Requests</h1>
+@if (Model.Count == 0)
+{
+    <p>No bookings yet.</p>
+}
+else
+{
+    <div class="table-wrap">
+        <table>
+            <tr><th>Property</th><th>Guest</th><th>Dates</th><th>Guests</th><th>Total</th><th>Status</th><th></th></tr>
+            @foreach (var b in Model)
+            {
+                <tr>
+                    <td>@b.Property.Title</td>
+                    <td>@b.Guest.FullName<br /><a asp-controller="Messages" asp-action="Index" asp-route-with="@b.GuestId">Message</a></td>
+                    <td>@b.CheckInDate.ToString("yyyy-MM-dd") to @b.CheckOutDate.ToString("yyyy-MM-dd") (@b.Nights nights)</td>
+                    <td>@b.NumberOfGuests</td>
+                    <td>R @b.TotalPrice.ToString("N2")</td>
+                    <td><span class="status @b.Status.ToString().ToLower()">@b.Status</span></td>
+                    <td>
+                        @if (b.Status == BookingStatus.Pending)
+                        {
+                            <form asp-action="DecideBooking" method="post" class="inline">
+                                <input type="hidden" name="id" value="@b.Id" />
+                                <button type="submit" name="approve" value="true">Approve</button>
+                                <button type="submit" name="approve" value="false" class="grey">Reject</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+}
