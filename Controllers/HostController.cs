@@ -129,5 +129,85 @@ public class HostController : Controller
         return RedirectToAction("BookingRequests");
     }
 
+    // Process for checkin
+
+    [HttpGet]
+    public async Task<IActionResult> ConfigureCheckIn(int id)
+    {
+        var userId = _users.GetUserId(User);
+        var property = await ApprovedPropertiesOf(userId).Include(p => p.CheckInProcess).FirstOrDefaultAsync(p => p.Id == id);
+        if (property == null) return NotFound();
+
+        ViewBag.PropertyTitle = property.Title;
+        return View(property.CheckInProcess ?? CheckInProcess.CreateDefault());
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfigureCheckIn(int id, string title, string rules)
+    {
+        var userId = _users.GetUserId(User);
+        var property = await ApprovedPropertiesOf(userId).Include(p => p.CheckInProcess).FirstOrDefaultAsync(p => p.Id == id);
+        if (property == null) return NotFound();
+
+        if (property.CheckInProcess == null)
+            property.CheckInProcess = new CheckInProcess();
+
+        property.CheckInProcess.Title = string.IsNullOrWhiteSpace(title) ? "Check-in" : title;
+        var lines = (rules ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        property.CheckInProcess.SetSteps(lines);
+        await _db.SaveChangesAsync();
+
+        await _audit.LogAsync(userId, "Updated check-in process for " + property.Title, ActivityType.Property);
+        TempData["Message"] = "Check-in process saved.";
+        return RedirectToAction("MyProperties");
+    }
+
+    // checking the uploaded documents for proof
+
+    public async Task<IActionResult> CheckIns()
+    {
+        var userId = _users.GetUserId(User);
+        var bookings = await _db.Bookings.Include(b => b.Property).Include(b => b.Guest).Include(b => b.GuestCheckIn).ThenInclude(g => g.Documents)
+            .Where(b => b.Property.HostId == userId && b.GuestCheckIn != null && (b.Status == BookingStatus.Approved || b.Status == BookingStatus.CheckedIn))
+            .OrderByDescending(b => b.CheckInDate).ToListAsync();
+        return View(bookings);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyDocument(int id, bool verify)
+    {
+        var userId = _users.GetUserId(User);
+        var document = await _db.GuestDocuments.Include(d => d.GuestCheckIn).ThenInclude(c => c.Documents).Include(d => d.GuestCheckIn).ThenInclude(c => c.Booking).ThenInclude(b => b.Property)
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (document == null) return NotFound();
+        var checkIn = document.GuestCheckIn;
+        var booking = checkIn.Booking;
+        if (booking.Property.HostId != userId) return Forbid();
+
+        if (verify)
+        {
+            document.Status = DocumentStatus.Verified;
+
+            // When the check-in is submitted and every document is verified the guest is checked in.
+            bool allVerified = checkIn.Documents.All(d => d.Status == DocumentStatus.Verified);
+            if (allVerified && checkIn.Status == CheckInStatus.Completed)
+            {
+                booking.Status = BookingStatus.CheckedIn;
+                await _audit.NotifyAsync(booking.GuestId, "Checked in", "You are checked in at '" + booking.Property.Title + "'.", NotificationType.Success, "/Booking/MyBookings");
+            }
+        }
+        else
+        {
+            document.Status = DocumentStatus.Rejected;
+            checkIn.Status = CheckInStatus.InProgress;   // guest must upload a new document
+            await _audit.NotifyAsync(booking.GuestId, "Document rejected", "Please upload a new document for '" + booking.Property.Title + "'.", NotificationType.Warning, "/Booking/CheckIn/" + booking.Id + "?step=2");
+        }
+        await _db.SaveChangesAsync();
+
+        await _audit.LogAsync(userId, (verify ? "Verified" : "Rejected") + " a document for booking #" + booking.Id, ActivityType.CheckIn);
+        return RedirectToAction("CheckIns");
+    }
+
 
 }

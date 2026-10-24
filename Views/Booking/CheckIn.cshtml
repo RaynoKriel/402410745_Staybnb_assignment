@@ -1,0 +1,79 @@
+@model Booking
+@{
+    ViewData["Title"] = "Check-in";
+    int step = (int)ViewBag.Step;
+    var checkIn = Model.GuestCheckIn;
+}
+<h1>Check-in: @Model.Property.Title</h1>
+
+<div class="steps">
+    <span class="@(step == 1 ? "now" : "")">1. Read the rules</span>
+    <span class="@(step == 2 ? "now" : "")">2. Upload ID / Passport</span>
+    <span class="@(step == 3 ? "now" : "")">3. Submit</span>
+</div>
+
+@if (Model.Status == BookingStatus.CheckedIn)
+{
+    <div class="alert ok">You are checked in. Enjoy your stay!</div>
+}
+
+<div class="box">
+    @if (step == 1)
+    {
+        <h2>@Model.Property.CheckInProcess.Title</h2>
+        <ul>
+            @foreach (var line in Model.Property.CheckInProcess.GetSteps())
+            {
+                <li>@line</li>
+            }
+        </ul>
+        <a class="button" asp-action="CheckIn" asp-route-id="@Model.Id" asp-route-step="2">Next</a>
+    }
+    else if (step == 2)
+    {
+        <h2>Upload your document</h2>
+        <form asp-action="UploadDocument" method="post" enctype="multipart/form-data" class="narrow">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <label>Document type</label>
+            <select name="documentType">
+                <option value="ID">ID</option>
+                <option value="Passport">Passport</option>
+            </select>
+            <label>File (jpg, png or pdf, max 5MB)</label>
+            <input type="file" name="file" required accept=".jpg,.jpeg,.png,.pdf" />
+            <p><button type="submit">Upload</button></p>
+        </form>
+        @if (checkIn.Documents.Count > 0)
+        {
+            <p><a class="button" asp-action="CheckIn" asp-route-id="@Model.Id" asp-route-step="3">Next</a></p>
+        }
+    }
+    else
+    {
+        <h2>Review and submit</h2>
+        <table>
+            <tr><th>Document</th><th>Status</th></tr>
+            @foreach (var d in checkIn.Documents)
+            {
+                <tr>
+                    <td>@d.DocumentType</td>
+                    <td><span class="status @d.Status.ToString().ToLower()">@d.Status</span></td>
+                </tr>
+            }
+        </table>
+        <p>Check-in status: <span class="status @checkIn.Status.ToString().ToLower()">@checkIn.Status</span></p>
+        @if (checkIn.Status != CheckInStatus.Completed)
+        {
+            <form asp-action="SubmitCheckIn" method="post">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit">Submit check-in</button>
+            </form>
+        }
+        else
+        {
+            <p class="muted">Submitted. The host will verify your documents.</p>
+        }
+        <p><a asp-action="CheckIn" asp-route-id="@Model.Id" asp-route-step="2">Upload another document</a></p>
+    }
+</div>
+<p><a asp-action="MyBookings">Back to my bookings</a></p>

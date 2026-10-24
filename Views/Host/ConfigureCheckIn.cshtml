@@ -1,0 +1,14 @@
+@model CheckInProcess
+@{
+    ViewData["Title"] = "Check-in process";
+}
+<h1>Check-in process: @ViewBag.PropertyTitle</h1>
+<p class="muted">Write the rules and the documents guests must provide. One line per item.</p>
+<form asp-action="ConfigureCheckIn" method="post" class="box narrow" style="max-width:700px">
+    <input type="hidden" name="id" value="@Context.Request.RouteValues["id"]" />
+    <label>Title</label>
+    <input type="text" name="title" value="@Model.Title" maxlength="200" />
+    <label>Rules and required documents</label>
+    <textarea name="rules" rows="8">@(string.Join("\n", Model.GetSteps()))</textarea>
+    <p><button type="submit">Save</button></p>
+</form>
