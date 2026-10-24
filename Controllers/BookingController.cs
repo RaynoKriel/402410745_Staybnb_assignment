@@ -90,5 +90,78 @@ public class BookingController : Controller
         return View(bookings);
     }
 
-    
+    // ---------- Guest check-in: 3 steps (1 read rules, 2 upload document, 3 submit) ----------
+
+    public async Task<IActionResult> CheckIn(int id, int step = 1)
+    {
+        var booking = await LoadBookingAsync(id);
+        if (booking == null) return NotFound();
+
+        if (step < 1) step = 1;
+        if (step > 3) step = 3;
+        var documents = booking.GuestCheckIn.Documents;
+        if (step == 3 && documents.Count == 0) step = 2;   // must upload before submitting
+
+        ViewBag.Step = step;
+        return View(booking);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadDocument(int id, string documentType, IFormFile file)
+    {
+        var booking = await LoadBookingAsync(id);
+        if (booking == null) return NotFound();
+
+        if (!FileHelper.IsValid(file, FileHelper.DocumentTypes))
+        {
+            TempData["Error"] = "Please choose a jpg, png or pdf file (max 5MB).";
+            return RedirectToAction("CheckIn", new { id, step = 2 });
+        }
+
+        var folder = Path.Combine(_env.ContentRootPath, "App_Data", "documents");
+        var fileName = await FileHelper.SaveAsync(file, folder);
+
+        booking.GuestCheckIn.Documents.Add(new GuestDocument
+        {
+            DocumentType = documentType == "Passport" ? "Passport" : "ID",
+            FileName = fileName
+        });
+        booking.GuestCheckIn.Status = CheckInStatus.InProgress;
+        await _db.SaveChangesAsync();
+
+        await _audit.LogAsync(booking.GuestId, "Uploaded a check-in document for booking #" + booking.Id, ActivityType.CheckIn);
+        return RedirectToAction("CheckIn", new { id, step = 3 });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubmitCheckIn(int id)
+    {
+        var booking = await LoadBookingAsync(id);
+        if (booking == null) return NotFound();
+
+        if (booking.GuestCheckIn.Documents.Count == 0)
+            return RedirectToAction("CheckIn", new { id, step = 2 });
+
+        booking.GuestCheckIn.Status = CheckInStatus.Completed;
+        await _db.SaveChangesAsync();
+
+        await _audit.LogAsync(booking.GuestId, "Submitted check-in for booking #" + booking.Id, ActivityType.CheckIn);
+        await _audit.NotifyAsync(booking.Property.HostId, "Check-in ready to verify",
+            "A guest submitted documents for '" + booking.Property.Title + "'.", NotificationType.Warning, "/Host/CheckIns");
+
+        return RedirectToAction("MyBookings");
+    }
+
+
+    // Loads one of MY bookings that has been approved (so a check-in exists).
+    private async Task<Booking> LoadBookingAsync(int id)
+    {
+        var userId = _users.GetUserId(User);
+        return await _db.Bookings
+            .Include(b => b.Property).ThenInclude(p => p.CheckInProcess)
+            .Include(b => b.GuestCheckIn).ThenInclude(g => g.Documents)
+            .FirstOrDefaultAsync(b => b.Id == id && b.GuestId == userId
+                && b.GuestCheckIn != null
+                && (b.Status == BookingStatus.Approved || b.Status == BookingStatus.CheckedIn));
+    }
 }
