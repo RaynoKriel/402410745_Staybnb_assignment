@@ -1,0 +1,49 @@
+@model InboxViewModel
+@{
+    ViewData["Title"] = "Messages";
+    string myId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+<h1>Messages</h1>
+<div class="inbox">
+    <div class="box people">
+        <b>Conversations</b>
+        @if (Model.People.Count == 0)
+        {
+            <p class="muted">No conversations yet. Use "Message the host" on a property page.</p>
+        }
+        @foreach (var p in Model.People)
+        {
+            int unread = Model.UnreadFrom.ContainsKey(p.Id) ? Model.UnreadFrom[p.Id] : 0;
+            <a asp-action="Index" asp-route-with="@p.Id" class="@(unread > 0 ? "unread" : "")">
+                @p.FullName
+                @if (unread > 0)
+                {
+                    <span class="badge">@unread</span>
+                }
+            </a>
+        }
+    </div>
+
+    <div class="box chat">
+        @if (Model.Other == null)
+        {
+            <p class="muted">Select a conversation.</p>
+        }
+        else
+        {
+            <b>@Model.Other.FullName</b>
+            @foreach (var m in Model.Conversation)
+            {
+                <div class="bubble @(m.SenderId == myId ? "mine" : "")">
+                    @m.Content<br />
+                    <span class="muted">@m.Timestamp.ToString("yyyy-MM-dd HH:mm")</span>
+                </div>
+            }
+            <form asp-action="Send" method="post">
+                <input type="hidden" name="receiverId" value="@Model.Other.Id" />
+                <textarea name="content" rows="3" maxlength="2000" required placeholder="Write a message"></textarea>
+                <p><button type="submit">Send</button></p>
+            </form>
+        }
+    </div>
+</div>
