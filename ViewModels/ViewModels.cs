@@ -92,3 +92,11 @@ public class AdminDashboardViewModel
     public List<Booking> RecentBookings { get; set; } = new();
 }
 
+public class InboxViewModel
+{
+    public List<ApplicationUser> People { get; set; } = new();
+    public Dictionary<string, int> UnreadFrom { get; set; } = new();
+    public ApplicationUser Other { get; set; }
+    public List<Message> Conversation { get; set; } = new();
+}
+
