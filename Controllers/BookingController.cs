@@ -164,4 +164,21 @@ public class BookingController : Controller
                 && b.GuestCheckIn != null
                 && (b.Status == BookingStatus.Approved || b.Status == BookingStatus.CheckedIn));
     }
+
+    // adding a review
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddReview(int propertyId, int rating, string comment)
+    {
+        var userId = _users.GetUserId(User);
+        bool stayed = await _db.Bookings.AnyAsync(b => b.PropertyId == propertyId && b.GuestId == userId && b.Status == BookingStatus.CheckedIn);
+        bool reviewed = await _db.Reviews.AnyAsync(r => r.PropertyId == propertyId && r.ReviewerId == userId);
+
+        if (stayed && !reviewed && rating >= 1 && rating <= 5)
+        {
+            _db.Reviews.Add(new Review { PropertyId = propertyId, ReviewerId = userId, Rating = rating, Comment = comment ?? "" });
+            await _db.SaveChangesAsync();
+        }
+        return RedirectToAction("Details", "Home", new { id = propertyId });
+    }
 }
