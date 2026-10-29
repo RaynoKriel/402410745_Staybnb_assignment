@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using _402410745_Staybnb_assignment.Data;
 using _402410745_Staybnb_assignment.Models;
 
-namespace Staybnb.Controllers;
+namespace _402410745_Staybnb_assignment.Controllers;
 
 public class HomeController : Controller
 {
