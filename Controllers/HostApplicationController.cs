@@ -7,7 +7,7 @@ using _402410745_Staybnb_assignment.Models;
 using _402410745_Staybnb_assignment.Services;
 using _402410745_Staybnb_assignment.ViewModels;
 
-namespace Staybnb.Controllers;
+namespace _402410745_Staybnb_assignment.Controllers;
 
 // "Become a Host" - a Guest (or an existing Host adding another property) submits a property.
 [Authorize(Roles = "Guest,Host")]
